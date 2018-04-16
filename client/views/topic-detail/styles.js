@@ -58,6 +58,16 @@ export const topicDetailStyle = theme => ({
       color: '#444',
     },
   },
+  editor: {
+    marginBottom: 20,
+  },
+  replyBtnBox: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  replyBtn: {
+    margin: 10,
+  },
   clearFix: {
     '&::after': {
       content: '""',
@@ -76,7 +86,7 @@ export const repliesStyle = () => ({
   },
   listItem: {
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
   },
   avatar: {
     width: 30,
@@ -96,10 +106,41 @@ export const repliesStyle = () => ({
     fontSize: 12,
     color: '#666',
   },
+  replyInfo: {
+    display: 'flex',
+    flexFlow: 'row nowrap',
+    justifyContent: 'flex-end',
+  },
+  fullSurplus: {
+    flexGrow: 1,
+  },
   replyTime: {
     color: '#08c',
     fontSize: 11,
     display: 'inline-block',
     marginLeft: 5,
+  },
+  thumb: {
+    cursor: 'pointer',
+    '& span': {
+      display: 'inline-block',
+      color: '#9e9e9e',
+      fontSize: 12,
+      height: '100%',
+      marginLeft: 5,
+      verticalAlign: 'top',
+    },
+  },
+})
+
+export const editor = () => ({
+  replyBtn: {
+    margin: 10,
+    fontSize: 15,
+    color: '#FFF',
+  },
+  replyBtnBox: {
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
 })

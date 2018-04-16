@@ -27,7 +27,7 @@ export const post = (url, params, datas) => (
   new Promise((resolve, reject) => {
     axios.post(parseUrl(url, params), datas)
       .then((resp) => {
-        const { data } = resp.data
+        const data = resp.data.data || resp.data
         if (data && data.success) {
           resolve(data)
         } else {

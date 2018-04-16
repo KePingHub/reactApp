@@ -6,7 +6,7 @@ import {
   extendObservable,
 } from 'mobx'
 import { topicSchema, replySchema } from '../util/variable-define'
-import { get } from '../util/http'
+import { get, post } from '../util/http'
 
 const createTopic = topic => Object.assign({}, topicSchema, topic)
 const createDetail = topic => Object.assign({}, replySchema, topic)
@@ -79,6 +79,23 @@ class TopicStore {
           }
         }).catch(reject)
       }
+    })
+  }
+  @action sendComment(params) {
+    return new Promise((resolve, reject) => {
+      console.log(params)
+      this.syncing = true
+      post(`/topic/${params.topicId}/replies`, {
+        needAccessToken: true,
+      }, params)
+        .then((resp) => {
+          if (resp.success) {
+            resolve()
+          } else {
+            reject()
+          }
+          this.syncing = false
+        }).catch(reject)
     })
   }
 

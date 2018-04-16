@@ -56,8 +56,8 @@ class MainAppBar extends Component {
     this.context.router.history.push('/user/login')
   }
 
-  avatarClick = () => {
-    this.context.router.history.push('/user/info')
+  avatarClick = (e, loginname) => {
+    this.context.router.history.push(`/userDetail/${loginname}`)
   }
   /* eslint-disable */
 
@@ -80,7 +80,7 @@ class MainAppBar extends Component {
             </Button>
             {
               isLogin ?
-                <Avatar className={classes.avatar} src={info.avatar_url} onClick={this.avatarClick} /> :
+                <Avatar className={classes.avatar} src={info.avatar_url} onClick={e => this.avatarClick(e, info.loginname)} /> :
                 <Button color="inherit" onClick={this.loginButtonClick} >
                   登录
                 </Button>

@@ -21,15 +21,86 @@ import { topicDetailStyle } from './styles'
 import { tabs } from '../../util/variable-define'
 
 import Reply from './reply'
+import DialogUnlogin from '../dialogs/dialog-unlogin'
+import Editor from './editor'
 
 @inject(stores => ({
   topicStore: stores.topicStore,
+  user: stores.appState.user,
 }))
 @observer
 class TopicDetail extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      newReply: '',
+      newReplyComments: {},
+      isLogin: this.props.user.isLogin,
+      open: false,
+    }
+  }
+
   componentDidMount() {
     const { id } = this.props.match.params
     this.props.topicStore.getTopicDetail(id)
+  }
+
+  getReplyComment = (reply) => {
+    const { id } = reply
+    const { loginname } = reply.author
+    return this.state.newReplyComments[id] || `@${loginname} `
+  }
+
+  newReplyCommentsChange = (content, replyId, type = '') => {
+    let comments = Object.assign({}, this.state.newReplyComments)
+    let newReplyComments = {}
+
+    if (type === 'delete') {
+      Object.keys(comments).forEach((key) => {
+        if (key !== replyId) {
+          newReplyComments[key] = comments[key]
+        }
+      })
+      comments = null
+    } else {
+      comments[replyId] = content
+    }
+    newReplyComments = comments || newReplyComments
+    this.setState({ newReplyComments })
+  }
+
+  handleNewReplyChange = (newValue) => {
+    this.setState({ newReply: newValue })
+  }
+
+  handleSendReplyClick = (replyId = '') => {
+    if (!this.state.isLogin) {
+      this.setState({ open: true })
+      return
+    }
+
+    const topicId = this.props.match.params.id
+    const params = { topicId }
+    if (replyId) {
+      params.reply_id = replyId
+      params.content = this.state.newReplyComments[replyId]
+    } else {
+      params.content = this.state.newReply
+    }
+    this.props.topicStore.sendComment(params)
+      .then(() => {
+        if (!replyId) {
+          this.setState({ newReply: '' })
+        } else {
+          this.newReplyCommentsChange('', replyId, 'delete')
+        }
+      }).catch((err) => {
+        console.log(err) // eslint-disable-line
+      })
+  }
+
+  handleDialogCloseClick = () => {
+    this.setState({ open: false })
   }
 
   render() {
@@ -80,7 +151,11 @@ class TopicDetail extends Component {
                 <span>{` · 最后一次编辑 ${dateformat(topic.last_reply_at, 'yy/mm/dd')}`}</span>
                 <span>{` · 来自 ${tabs[topic.tab]}`}</span>
               </span>
-              <Button variant="raised" color={topic.is_collect ? 'default' : 'secondary'} className={collect}>
+              <Button
+                variant="raised"
+                color={topic.is_collect ? 'default' : 'secondary'}
+                className={collect}
+              >
                 {topic.is_collect ? '已收藏' : '收藏'}
               </Button>
             </div>
@@ -92,14 +167,38 @@ class TopicDetail extends Component {
 
         <Paper elevation={4} className={classes.replies} >
           <header className={classes.replyHeader}>
+            <span>添加回复</span>
+          </header>
+          <section className={classes.editor}>
+            <Editor
+              handleChange={this.handleNewReplyChange}
+              value={this.state.newReply}
+              handleSendClick={this.handleSendReplyClick}
+              replyId={''}
+            />
+          </section>
+        </Paper>
+
+        <Paper elevation={4} className={classes.replies} >
+          <header className={classes.replyHeader}>
             <span>{`${topic.reply_count} 回复`}</span>
           </header>
           <List>
             {
-              topic.replies.map(reply => (<Reply reply={reply} key={reply.id} />))
+              topic.replies.map(reply => (
+                <Reply
+                  reply={reply}
+                  key={reply.id}
+                  value={this.getReplyComment(reply)}
+                  handleChange={this.newReplyCommentsChange}
+                  handleSendReplyClick={this.handleSendReplyClick}
+                />
+              ))
             }
           </List>
         </Paper>
+
+        <DialogUnlogin open={this.state.open} handleClose={this.handleDialogCloseClick} />
       </div>
     )
     /* eslint-disable */
@@ -108,6 +207,7 @@ class TopicDetail extends Component {
 
 TopicDetail.wrappedComponent.propTypes = {
   topicStore: PropTypes.object,
+  user: PropTypes.object,
 }
 TopicDetail.propTypes = {
   match: PropTypes.object.isRequired,
