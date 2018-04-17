@@ -49,7 +49,7 @@ class MainAppBar extends Component {
   }
 
   createButtonClick = () => {
-
+    this.context.router.history.push('/topic/create')
   }
 
   loginButtonClick = () => {
@@ -64,7 +64,6 @@ class MainAppBar extends Component {
   render() {
     const { classes } = this.props
     const { isLogin, info } = this.props.user
-
     return (
       <div className={classes.root}>
         <AppBar position="fixed" >
