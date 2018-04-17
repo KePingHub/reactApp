@@ -46,3 +46,10 @@ export const userSchema = {
   recent_topics: [],
   success: false,
 }
+
+export const newTopicTab = {
+  ask: '问答',
+  share: '分享',
+  job: '招聘',
+  dev: '客户端测试',
+}

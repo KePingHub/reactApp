@@ -2,6 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 
+import {
+  inject,
+  observer,
+} from 'mobx-react'
+
 import Avatar from 'material-ui/Avatar'
 import { withStyles } from 'material-ui/styles'
 import ListItem from 'material-ui/List/ListItem'
@@ -13,22 +18,27 @@ import cn from 'classnames'
 import dateformat from 'dateformat'
 
 import { repliesStyle } from './styles'
-import Editor from './editor'
+import Editor from '../editor/editor'
 
+@inject(stores => ({
+  topicStore: stores.topicStore,
+}))@observer
 class Reply extends React.Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
     this.state = {
       open: false,
+      isThumbUp: props.reply.is_uped,
+      thumbUpCount: props.reply.ups.length,
     }
   }
 
-  handleSendReplyClick = () => {
+  handleSendReplyClick = (e) => {
     const {
       reply,
       handleSendReplyClick,
     } = this.props
-    handleSendReplyClick(reply.id)
+    handleSendReplyClick(e, reply.id)
   }
 
   handleChange = (content) => {
@@ -38,7 +48,30 @@ class Reply extends React.Component {
     } = this.props
     handleChange(content, reply.id)
   }
-  toggleEditorStatus = () => {
+
+  handleThumbClick = () => {
+    const {
+      reply,
+      topicStore,
+    } = this.props
+    topicStore.setThumbUpOrDown(reply.id)
+      .then((resp) => {
+        const { action } = resp
+        if (action === 'up') {
+          this.setState({
+            isThumbUp: true,
+            thumbUpCount: this.state.thumbUpCount + 1,
+          })
+        } else if (action === 'down') {
+          this.setState({
+            isThumbUp: false,
+            thumbUpCount: this.state.thumbUpCount - 1,
+          })
+        }
+      }).catch(err => console.log(err)) // eslint-disable-line
+  }
+
+  toggleEditorStatusClick = () => {
     this.setState({
       open: !this.state.open,
     })
@@ -50,6 +83,10 @@ class Reply extends React.Component {
       value,
       reply,
     } = this.props
+    const {
+      thumbUpCount,
+      isThumbUp,
+    } = this.state
     const avatar = cn({
       [classes.avatar]: true,
       [classes.fl]: true,
@@ -66,9 +103,9 @@ class Reply extends React.Component {
             <span className={classes.replyTime}>{dateformat(reply.create_at, 'yy/mm/dd HH:MM:ss')}</span>
           </div>
           <div className={classes.thumb}>
-            <ThumbUp color={reply.is_uped ? 'primary' : 'disabled'} />
-            <span>{reply.ups.length ? reply.ups.length : " "}</span>
-            <ReplyIcon color="disabled" onClick={this.toggleEditorStatus} />
+            <ThumbUp color={isThumbUp ? 'primary' : 'disabled'} onClick={this.handleThumbClick} />
+            <span>{thumbUpCount ? thumbUpCount : " "}</span>
+            <ReplyIcon color="disabled" onClick={this.toggleEditorStatusClick} />
           </div>
         </div>
         <div
@@ -78,6 +115,7 @@ class Reply extends React.Component {
         {
           this.state.open ?
             <Editor
+              buttonText="回复"
               handleChange={this.handleChange}
               value={value || `@${reply.author.loginname} `}
               handleSendClick={this.handleSendReplyClick}
@@ -89,6 +127,9 @@ class Reply extends React.Component {
   /* eslint-disable */
 }
 
+Reply.wrappedComponent.propTypes = {
+  topicStore: PropTypes.object.isRequired,
+}
 Reply.propTypes = {
   classes: PropTypes.object.isRequired,
   reply: PropTypes.object.isRequired,

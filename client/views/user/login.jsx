@@ -51,7 +51,7 @@ class Login extends React.Component {
       helpText: '',
     })
     return this.props.appState.login(this.state.accessToken)
-      .then(() => this.context.router.history.replace(`/userDetail/${this.props.user.info.loginname}`))
+      .then(() => this.context.router.history.go(-1))
       .catch((err) => {
         console.log(err) // eslint-disable-line
       })

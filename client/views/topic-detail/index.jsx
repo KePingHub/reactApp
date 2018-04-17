@@ -22,7 +22,7 @@ import { tabs } from '../../util/variable-define'
 
 import Reply from './reply'
 import DialogUnlogin from '../dialogs/dialog-unlogin'
-import Editor from './editor'
+import Editor from '../editor/editor'
 
 @inject(stores => ({
   topicStore: stores.topicStore,
@@ -73,7 +73,7 @@ class TopicDetail extends Component {
     this.setState({ newReply: newValue })
   }
 
-  handleSendReplyClick = (replyId = '') => {
+  handleSendReplyClick = (e, replyId = '') => {
     if (!this.state.isLogin) {
       this.setState({ open: true })
       return
@@ -171,10 +171,10 @@ class TopicDetail extends Component {
           </header>
           <section className={classes.editor}>
             <Editor
+              buttonText="回复"
               handleChange={this.handleNewReplyChange}
               value={this.state.newReply}
               handleSendClick={this.handleSendReplyClick}
-              replyId={''}
             />
           </section>
         </Paper>

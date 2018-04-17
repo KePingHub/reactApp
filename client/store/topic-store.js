@@ -22,6 +22,7 @@ class TopicStore {
   @observable topics
   @observable details
   @observable syncing
+  @observable lockReq = false
 
   constructor({ syncing = false, topics = [], details = [] } = {}) {
     this.syncing = syncing
@@ -31,6 +32,10 @@ class TopicStore {
 
   addTopic(topic) {
     this.topics.push(new Topic(createTopic(topic)))
+  }
+
+  deleteTopicId(topicId) {
+    this.details.map((topic, index) => topic.id === topicId && this.details.splice(index, 1))
   }
 
   @computed get detailMap() {
@@ -44,7 +49,6 @@ class TopicStore {
     return new Promise((resolve, reject) => {
       this.syncing = true
       this.topics.clear()
-
       get('/topics', {
         mdrender: false,
         ...params,
@@ -62,6 +66,27 @@ class TopicStore {
       })
     })
   }
+
+  @action createTopic(params) {
+    return new Promise((resolve, reject) => {
+      if (!this.lockReq) {
+        this.lockReq = true
+        post('/topics', { needAccessToken: true }, params)
+          .then((resp) => {
+            if (resp.success) {
+              resolve(resp)
+            } else {
+              reject()
+            }
+            this.lockReq = false
+          }).catch((err) => {
+            reject(err)
+            this.lockReq = false
+          })
+      }
+    })
+  }
+
   @action getTopicDetail(id) {
     return new Promise((resolve, reject) => {
       if (this.detailMap[id]) {
@@ -69,6 +94,7 @@ class TopicStore {
       } else {
         get(`/topic/${id}`, {
           mdrender: false,
+          needAccessToken: true,
         }).then((resp) => {
           if (resp.success) {
             const topic = new Topic(createDetail(resp.data))
@@ -81,21 +107,52 @@ class TopicStore {
       }
     })
   }
+
   @action sendComment(params) {
     return new Promise((resolve, reject) => {
       console.log(params)
       this.syncing = true
-      post(`/topic/${params.topicId}/replies`, {
-        needAccessToken: true,
-      }, params)
-        .then((resp) => {
-          if (resp.success) {
-            resolve()
-          } else {
-            reject()
-          }
-          this.syncing = false
-        }).catch(reject)
+      if (!this.lockReq) {
+        this.lockReq = true
+        post(`/topic/${params.topicId}/replies`, {
+          needAccessToken: true,
+        }, params)
+          .then((resp) => {
+            console.log(resp)
+            if (resp.success) {
+              this.deleteTopicId(params.topicId)
+              this.getTopicDetail(params.topicId)
+              resolve()
+            } else {
+              reject()
+            }
+            this.syncing = false
+            this.lockReq = false
+          }).catch((err) => {
+            reject(err)
+            this.syncing = false
+            this.lockReq = false
+          })
+      }
+    })
+  }
+
+  @action setThumbUpOrDown(replyId) {
+    return new Promise((resolve, reject) => {
+      if (!this.lockReq) {
+        post(`/reply/${replyId}/ups`, { needAccessToken: true })
+          .then((resp) => {
+            if (resp.success) {
+              resolve(resp)
+            } else {
+              reject()
+            }
+            this.lockReq = false
+          }).catch((err) => {
+            reject(err)
+            this.lockReq = false
+          })
+      }
     })
   }
 
