@@ -74,9 +74,12 @@ class MainAppBar extends Component {
             <Typography type="title" color="inherit" className={classes.flex} >
               KNode
             </Typography>
-            <Button variant="raised" color="primary" onClick={this.createButtonClick} >
-              新建话题
-            </Button>
+            {
+              isLogin ?
+                <Button variant="raised" color="primary" onClick={this.createButtonClick} >
+                  新建话题
+                </Button> : null
+            }
             {
               isLogin ?
                 <Avatar className={classes.avatar} src={info.avatar_url} onClick={e => this.avatarClick(e, info.loginname)} /> :

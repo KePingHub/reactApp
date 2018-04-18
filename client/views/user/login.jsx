@@ -16,6 +16,7 @@ import loginStyle from './styles/loginStyle'
 @inject(stores => ({
   appState: stores.appState,
   user: stores.appState.user,
+  topicStore: stores.topicStore,
 }))
 @observer
 class Login extends React.Component {
@@ -51,8 +52,10 @@ class Login extends React.Component {
       helpText: '',
     })
     return this.props.appState.login(this.state.accessToken)
-      .then(() => this.context.router.history.go(-1))
-      .catch((err) => {
+      .then(() => {
+        this.props.topicStore.clearDetails()
+        this.context.router.history.go(-1)
+      }).catch((err) => {
         console.log(err) // eslint-disable-line
       })
   }
@@ -96,6 +99,7 @@ Login.propTypes = {
 Login.wrappedComponent.propTypes = {
   appState: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
+  topicStore: PropTypes.object.isRequired,
 }
 
 export default withStyles(loginStyle)(Login)

@@ -4,6 +4,7 @@ import {
   extendObservable,
   autorun,
   action,
+  toJS,
 } from 'mobx'
 
 import { post, get } from '../util/http'
@@ -19,14 +20,12 @@ class User {
 }
 
 export default class AppState {
-  @observable user = {
-    isLogin: false,
-    info: {},
-  }
+  @observable user
   @observable userDetail
 
-  constructor({ userDetail } = { userDetail: [] }) {
-    this.userDetail = userDetail.map(user => new User(createUser(user)))
+  constructor({ userDetail = [], user = { isLogin: false, info: {} } } = {}) {
+    this.user = new User(user)
+    this.userDetail = userDetail.map(detail => new User(createUser(detail)))
   }
 
   @computed get userMap() {
@@ -68,6 +67,13 @@ export default class AppState {
         }).catch(reject)
       }
     })
+  }
+
+  toJson() {
+    return {
+      user: toJS(this.user),
+      userDetail: this.userDetail,
+    }
   }
 }
 

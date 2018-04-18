@@ -1,6 +1,6 @@
 import {
   observable,
-  // toJs,
+  toJS,
   computed,
   action,
   extendObservable,
@@ -22,20 +22,31 @@ class TopicStore {
   @observable topics
   @observable details
   @observable syncing
+  @observable tab
   @observable lockReq = false
 
-  constructor({ syncing = false, topics = [], details = [] } = {}) {
+  constructor({
+    syncing = false,
+    topics = [],
+    tab = null,
+    details = [],
+  } = {}) {
     this.syncing = syncing
     this.topics = topics.map(topic => new Topic(createTopic(topic)))
     this.details = details.map(topic => new Topic(createDetail(topic)))
+    this.tab = tab
   }
 
-  addTopic(topic) {
+  @action addTopic(topic) {
     this.topics.push(new Topic(createTopic(topic)))
   }
 
-  deleteTopicId(topicId) {
+  @action deleteTopic(topicId) {
     this.details.map((topic, index) => topic.id === topicId && this.details.splice(index, 1))
+  }
+
+  @action clearDetails() {
+    this.details.clear()
   }
 
   @computed get detailMap() {
@@ -45,25 +56,31 @@ class TopicStore {
     }, {})
   }
 
-  @action fetchTopics(params) {
+  @action fetchTopics(tab) {
     return new Promise((resolve, reject) => {
-      this.syncing = true
-      this.topics.clear()
-      get('/topics', {
-        mdrender: false,
-        ...params,
-      }).then((resp) => {
-        if (resp.success) {
-          resp.data.forEach(topic => this.addTopic(topic))
-          resolve()
-        } else {
-          reject()
-        }
-        this.syncing = false
-      }).catch((err) => {
-        reject(err)
-        this.syncing = false
-      })
+      if (tab === this.tab && this.topics.length > 0) {
+        resolve()
+      } else {
+        this.tab = tab
+        this.syncing = true
+        this.topics.clear()
+        get('/topics', {
+          mdrender: false,
+          tab,
+        }).then((resp) => {
+          if (resp.success) {
+            const topics = resp.data.map(topic => new Topic(createTopic(topic)))
+            this.topics = topics
+            resolve()
+          } else {
+            reject()
+          }
+          this.syncing = false
+        }).catch((err) => {
+          reject(err)
+          this.syncing = false
+        })
+      }
     })
   }
 
@@ -87,30 +104,35 @@ class TopicStore {
     })
   }
 
-  @action getTopicDetail(id) {
+  @action getTopicDetail(id, isLogin) {
     return new Promise((resolve, reject) => {
       if (this.detailMap[id]) {
         resolve(this.detailMap[id])
+        console.log('aaa')
       } else {
-        get(`/topic/${id}`, {
+        const params = {
           mdrender: false,
-          needAccessToken: true,
-        }).then((resp) => {
-          if (resp.success) {
-            const topic = new Topic(createDetail(resp.data))
-            this.details.push(topic)
-            resolve(topic)
-          } else {
-            reject()
-          }
-        }).catch(reject)
+        }
+        if (isLogin) {
+          params.needAccessToken = true
+        }
+        get(`/topic/${id}`, params)
+          .then((resp) => {
+            if (resp.success) {
+              const topic = new Topic(createDetail(resp.data))
+              this.details.push(topic)
+              console.log(this.details.length)
+              resolve(topic)
+            } else {
+              reject()
+            }
+          }).catch(reject)
       }
     })
   }
 
   @action sendComment(params) {
     return new Promise((resolve, reject) => {
-      console.log(params)
       this.syncing = true
       if (!this.lockReq) {
         this.lockReq = true
@@ -118,9 +140,8 @@ class TopicStore {
           needAccessToken: true,
         }, params)
           .then((resp) => {
-            console.log(resp)
             if (resp.success) {
-              this.deleteTopicId(params.topicId)
+              this.deleteTopic(params.topicId)
               this.getTopicDetail(params.topicId)
               resolve()
             } else {
@@ -158,8 +179,11 @@ class TopicStore {
 
   toJson() {
     return {
-      topics: this.topics,
+      topics: toJS(this.topics),
       syncing: this.syncing,
+      details: toJS(this.details),
+      lockReq: this.lockReq,
+      tab: this.tab,
     }
   }
 }

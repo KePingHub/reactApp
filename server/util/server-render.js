@@ -20,10 +20,21 @@ const getStoreState = (stores) => {
 
 module.exports = (bundle, template, req, res) => {
   return new Promise((resolve, reject) => {
+    const user = req.session.user
     const createStoreMap = bundle.createStoreMap
     const createApp = bundle.default
     const routerContext = {}
     const stores = createStoreMap()
+    if (user) {
+      const info = Object.assign({}, user)
+      delete info.accessToken
+      stores.appState.user.isLogin = true
+      stores.appState.user.info = info
+    } else {
+      stores.appState.user.isLogin = false
+      stores.appState.user.info = {}
+    }
+
     const theme = createMuiTheme({
       palette: {
         primary: colors.pink,

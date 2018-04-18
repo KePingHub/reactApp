@@ -14,7 +14,6 @@ import { withStyles } from 'material-ui/styles'
 import Paper from 'material-ui/Paper'
 import List from 'material-ui/List'
 import { CircularProgress } from 'material-ui/Progress'
-import Button from 'material-ui/Button'
 
 import Container from '../layout/container'
 import { topicDetailStyle } from './styles'
@@ -42,13 +41,23 @@ class TopicDetail extends Component {
 
   componentDidMount() {
     const { id } = this.props.match.params
-    this.props.topicStore.getTopicDetail(id)
+    this.props.topicStore.getTopicDetail(id, this.state.isLogin)
   }
 
   getReplyComment = (reply) => {
     const { id } = reply
     const { loginname } = reply.author
     return this.state.newReplyComments[id] || `@${loginname} `
+  }
+
+  bootstrap = () => {
+    const { id } = this.props.match.params
+    console.log(id)
+    return this.props.topicStore.getTopicDetail(id, this.state.isLogin).then(() => {
+      console.log('success')
+    }).catch(() => {
+      console.log('faild')
+    })
   }
 
   newReplyCommentsChange = (content, replyId, type = '') => {
@@ -75,7 +84,7 @@ class TopicDetail extends Component {
 
   handleSendReplyClick = (e, replyId = '') => {
     if (!this.state.isLogin) {
-      this.setState({ open: true })
+      this.handleDialogOpenClick()
       return
     }
 
@@ -99,6 +108,10 @@ class TopicDetail extends Component {
       })
   }
 
+  handleDialogOpenClick = () => {
+    this.setState({ open: true })
+  }
+
   handleDialogCloseClick = () => {
     this.setState({ open: false })
   }
@@ -120,11 +133,6 @@ class TopicDetail extends Component {
       )
     }
 
-
-    const collect = cn({
-      [classes.collectBtn]: true,
-      [classes.fr]: true,
-    })
     const createInfo = cn({
       [classes.createInfo]: true,
       [classes.clearFix]: true,
@@ -151,33 +159,28 @@ class TopicDetail extends Component {
                 <span>{` · 最后一次编辑 ${dateformat(topic.last_reply_at, 'yy/mm/dd')}`}</span>
                 <span>{` · 来自 ${tabs[topic.tab]}`}</span>
               </span>
-              <Button
-                variant="raised"
-                color={topic.is_collect ? 'default' : 'secondary'}
-                className={collect}
-              >
-                {topic.is_collect ? '已收藏' : '收藏'}
-              </Button>
             </div>
           </header>
           <section className={classes.contentMain}>
             <div dangerouslySetInnerHTML={{ __html: marked(topic.content) }} />
           </section>
         </Container>
-
-        <Paper elevation={4} className={classes.replies} >
-          <header className={classes.replyHeader}>
-            <span>添加回复</span>
-          </header>
-          <section className={classes.editor}>
-            <Editor
-              buttonText="回复"
-              handleChange={this.handleNewReplyChange}
-              value={this.state.newReply}
-              handleSendClick={this.handleSendReplyClick}
-            />
-          </section>
-        </Paper>
+        {
+          this.state.isLogin ?
+            (<Paper elevation={4} className={classes.replies} >
+              <header className={classes.replyHeader}>
+                <span>添加回复</span>
+              </header>
+              <section className={classes.editor}>
+                <Editor
+                  buttonText="回复"
+                  handleChange={this.handleNewReplyChange}
+                  value={this.state.newReply}
+                  handleSendClick={this.handleSendReplyClick}
+                />
+              </section>
+            </Paper>) : null
+        }
 
         <Paper elevation={4} className={classes.replies} >
           <header className={classes.replyHeader}>
@@ -189,9 +192,11 @@ class TopicDetail extends Component {
                 <Reply
                   reply={reply}
                   key={reply.id}
+                  isLogin={this.state.isLogin}
                   value={this.getReplyComment(reply)}
                   handleChange={this.newReplyCommentsChange}
                   handleSendReplyClick={this.handleSendReplyClick}
+                  handleDialogOpenClick={this.handleDialogOpenClick}
                 />
               ))
             }

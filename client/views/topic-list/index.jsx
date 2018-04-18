@@ -28,16 +28,13 @@ export default class TopicList extends Component {
   }
 
   componentDidMount() {
-    this.props.topicStore.fetchTopics({
-      tab: this.getTab(),
-    })
+    this.props.topicStore.fetchTopics(this.getTab())
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.location.search !== this.props.location.search) {
-      this.props.topicStore.fetchTopics({
-        tab: this.getTab(nextProps.location.search),
-      })
+      const tab = this.getTab(nextProps.location.search)
+      this.props.topicStore.fetchTopics(tab)
     }
   }
 
@@ -47,14 +44,15 @@ export default class TopicList extends Component {
     return query.tab || 'all'
   }
 
-  // bootstrap() {
-  //   return new Promise((resolve) => {
-  //     setTimeout(() => {
-  //       this.props.appState.count = 3
-  //       resolve(true)
-  //     })
-  //   })
-  // }
+  bootstrap = () => {
+    const query = queryString.parse(this.props.location.search)
+    const { tab } = query
+    return this.props.topicStore.fetchTopics(tab || 'all').then(() => {
+      console.log('success') // eslint-disable-line
+    }).catch(() => {
+      console.log('faild') // eslint-disable-line
+    })
+  }
 
   changeTab = (e, type) => {
     this.context.router.history.push({

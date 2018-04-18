@@ -52,29 +52,40 @@ class Reply extends React.Component {
   handleThumbClick = () => {
     const {
       reply,
+      isLogin,
+      handleDialogOpenClick,
       topicStore,
     } = this.props
-    topicStore.setThumbUpOrDown(reply.id)
-      .then((resp) => {
-        const { action } = resp
-        if (action === 'up') {
-          this.setState({
-            isThumbUp: true,
-            thumbUpCount: this.state.thumbUpCount + 1,
-          })
-        } else if (action === 'down') {
-          this.setState({
-            isThumbUp: false,
-            thumbUpCount: this.state.thumbUpCount - 1,
-          })
-        }
-      }).catch(err => console.log(err)) // eslint-disable-line
+    if (!isLogin) {
+      handleDialogOpenClick()
+    } else {
+      topicStore.setThumbUpOrDown(reply.id)
+        .then((resp) => {
+          const { action } = resp
+          if (action === 'up') {
+            this.setState({
+              isThumbUp: true,
+              thumbUpCount: this.state.thumbUpCount + 1,
+            })
+          } else if (action === 'down') {
+            this.setState({
+              isThumbUp: false,
+              thumbUpCount: this.state.thumbUpCount - 1,
+            })
+          }
+        }).catch(err => console.log(err)) // eslint-disable-line
+    }
   }
 
   toggleEditorStatusClick = () => {
-    this.setState({
-      open: !this.state.open,
-    })
+    const { isLogin, handleDialogOpenClick } = this.props
+    if (!isLogin) {
+      handleDialogOpenClick()
+    } else {
+      this.setState({
+        open: !this.state.open,
+      })
+    }
   }
   /* eslint-disable */
   render() {
@@ -82,6 +93,7 @@ class Reply extends React.Component {
       classes,
       value,
       reply,
+      isLogin,
     } = this.props
     const {
       thumbUpCount,
@@ -105,7 +117,11 @@ class Reply extends React.Component {
           <div className={classes.thumb}>
             <ThumbUp color={isThumbUp ? 'primary' : 'disabled'} onClick={this.handleThumbClick} />
             <span>{thumbUpCount ? thumbUpCount : " "}</span>
-            <ReplyIcon color="disabled" onClick={this.toggleEditorStatusClick} />
+            {
+              isLogin ?
+                <ReplyIcon color="disabled" onClick={this.toggleEditorStatusClick} />
+                : null
+            }
           </div>
         </div>
         <div
@@ -135,7 +151,8 @@ Reply.propTypes = {
   reply: PropTypes.object.isRequired,
   handleChange: PropTypes.func.isRequired,
   handleSendReplyClick: PropTypes.func.isRequired,
-  open: PropTypes.bool,
+  handleDialogOpenClick: PropTypes.func.isRequired,
+  isLogin: PropTypes.bool.isRequired,
   value: PropTypes.string.isRequired,
 }
 
