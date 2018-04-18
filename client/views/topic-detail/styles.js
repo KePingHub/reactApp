@@ -132,15 +132,3 @@ export const repliesStyle = () => ({
     },
   },
 })
-
-export const editor = () => ({
-  replyBtn: {
-    margin: 10,
-    fontSize: 15,
-    color: '#FFF',
-  },
-  replyBtnBox: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-  },
-})
